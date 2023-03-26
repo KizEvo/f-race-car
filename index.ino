@@ -1,10 +1,3 @@
-// C++ code
-//
-//
-// Please read README.txt file first
-//
-//
-// Các CONSTANT cho các PORT
 #define MOTOR_DRIVE_1 3
 #define MOTOR_DIRECTION_1 2
 
@@ -20,8 +13,8 @@
 #define ULTSON_SENSOR_RIGHT 12
 #define ULTSON_SENSOR_LEFT 13
 
-#define MAX_FORWARD_SPEED 190
-#define MAX_REVERSE_SPEED 150
+#define MAX_FORWARD_SPEED 250
+#define MAX_REVERSE_SPEED 10
 
 // Các CONSTANT cho các biến khác nhau, 5 và 0 ở đây là HIGH và LOW
 // MOVE_STOP = 1 chỉ để lặp điều kiện
@@ -55,30 +48,7 @@ void setup()
 // Không nên gọi các hàm config hoặc các hàm con của hàm phụ ở đây.
 void loop()
 {
-  int distanceRight;
-  int distanceLeft;
-  
-  distanceRight = sensorDetectionRange(ULTSON_SENSOR_RIGHT);
-  distanceLeft = sensorDetectionRange(ULTSON_SENSOR_LEFT);
-
-  if(distanceRight <= 25 & distanceRight < distanceLeft){
-    Serial.println("rotate right");
-    motorRotateRight();
-    moveStop(2000);
-  }
-  
-  if(distanceLeft <= 25 & distanceLeft < distanceRight){
-    Serial.println("rotate left");
-    motorRotateLeft();
-    moveStop(2000);
-  }
-    
-  //moveStop(2000);
-  //moveForward();
-  //moveStop(2000);
-  //moveReverse();
-  //moveStop(2000);
-  
+  moveReverse();
 }
 
 // Hàm điều chỉnh hướng di chuyển của bánh xe 
@@ -87,19 +57,23 @@ void motorDirectionConfig(int mode){
   if(mode == MOVE_STOP){
     digitalWrite(MOTOR_DIRECTION_1, MOVE_FORWARD);
     digitalWrite(MOTOR_DIRECTION_2, MOVE_FORWARD);
-  	digitalWrite(MOTOR_DIRECTION_3, MOVE_FORWARD);
+    digitalWrite(MOTOR_DIRECTION_3, MOVE_FORWARD);
     digitalWrite(MOTOR_DIRECTION_4, MOVE_FORWARD);
     return;
   }
   if(mode == MOVE_FORWARD) {
     digitalWrite(MOTOR_DIRECTION_1, MOVE_FORWARD);
     digitalWrite(MOTOR_DIRECTION_2, MOVE_FORWARD);
+    digitalWrite(MOTOR_DIRECTION_3, MOVE_FORWARD);
+    digitalWrite(MOTOR_DIRECTION_4, MOVE_FORWARD);
     return;
   }
   // PORT ở mức thấp (0V/LOW) thì bánh xe sẽ được thiết lập tiến về trước
 
   digitalWrite(MOTOR_DIRECTION_1, MOVE_REVERSE);
   digitalWrite(MOTOR_DIRECTION_2, MOVE_REVERSE);
+  digitalWrite(MOTOR_DIRECTION_3, MOVE_REVERSE);
+  digitalWrite(MOTOR_DIRECTION_4, MOVE_REVERSE);
   // PORT ở mức cao (5V/HIGH) thì bánh xe sẽ được tiếp lập tiến về phía sau
 }
 
@@ -135,35 +109,26 @@ void moveStop(unsigned long motorWaitTimeInMs){
 
 // Hàm di chuyển về phía trước 
 // hàm phụ
-void moveForward(){
-  int speed;
-  int distanceRight;
-  int distanceLeft;
-  
+void moveForward(){  
   motorDirectionConfig(MOVE_FORWARD);
   delay(100);
   
-  for(speed = 0; speed <= MAX_FORWARD_SPEED; speed+=5){
-    
-    analogWrite(MOTOR_DRIVE_1, speed);
-  	analogWrite(MOTOR_DRIVE_2, speed);
-    delay(20);
-  }
+  digitalWrite(MOTOR_DRIVE_1, MAX_FORWARD_SPEED);
+  digitalWrite(MOTOR_DRIVE_2, MAX_FORWARD_SPEED);
+  digitalWrite(MOTOR_DRIVE_3, MAX_FORWARD_SPEED);
+  digitalWrite(MOTOR_DRIVE_4, MAX_FORWARD_SPEED);
 }
 
 // Hàm di chuyển về phía sau 
 // hàm phụ
 void moveReverse(){
-  int speed;
-  
   motorDirectionConfig(MOVE_REVERSE);
   delay(100);
   
-  for(speed = 250; speed > MAX_REVERSE_SPEED; speed--){
-    analogWrite(MOTOR_DRIVE_1, speed);
-  	analogWrite(MOTOR_DRIVE_2, speed);
-    delay(20);
-  }
+  analogWrite(MOTOR_DRIVE_1, MAX_REVERSE_SPEED);
+  analogWrite(MOTOR_DRIVE_2, MAX_REVERSE_SPEED);
+  analogWrite(MOTOR_DRIVE_3, MAX_REVERSE_SPEED);
+  analogWrite(MOTOR_DRIVE_4, MAX_REVERSE_SPEED);
 }
 
 // Hàm thực thi việc quay bánh xe qua phải 
@@ -182,7 +147,7 @@ void motorRotateRight(){
     
     analogWrite(MOTOR_DRIVE_1, speedReverse);
     analogWrite(MOTOR_DRIVE_3, speedReverse);
-	delay(20);
+  delay(20);
   }
 }
 
@@ -231,6 +196,25 @@ void sendSensorSignal(int portNumber){
   digitalWrite(portNumber, HIGH);
   delayMicroseconds(5);
   digitalWrite(portNumber, LOW);
+}
+
+// Hàm nhận tín hiệu của cảm biến, trả về 1 con số theo cm ở kiểu long
+// nhận 1 params là số PORT phát/nhận tín hiệu
+long receivedSensorSignal(int portNumber){
+  long duration, cm;
+  pinMode(portNumber, INPUT);
+  
+  duration = pulseIn(portNumber, HIGH);
+  cm = microSecToCenti(duration);
+  
+  return cm;
+}
+
+// Hàm chuyển đổi tín hiệu nhận được của cảm biến thành cm, 
+// nhận 1 param là thời gian ở micro, 
+// trả về 1 con số theo cm ở kiểu long
+long microSecToCenti(long cm){
+  return cm / 29 / 2;
 }
 
 // Hàm nhận tín hiệu của cảm biến, trả về 1 con số theo cm ở kiểu long
