@@ -5,7 +5,7 @@
 
 # Tech
 - Arduino Uno R3 (Atmega328)
-- L293D Driver
+- L298N Driver
 - Motor V1
 - Ultra sonic sensor
 - Line sensor
